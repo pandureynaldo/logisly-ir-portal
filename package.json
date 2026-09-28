@@ -1,0 +1,17 @@
+{
+  "name": "logisly-ir-portal",
+  "private": true,
+  "scripts": {
+    "predev": "pnpm db:generate && pnpm --filter @logisly/shared build",
+    "dev": "pnpm -r --parallel --filter @logisly/api --filter @logisly/web run dev",
+    "build": "pnpm --filter @logisly/shared build && pnpm --filter @logisly/api build && pnpm --filter @logisly/web build",
+    "typecheck": "pnpm -r run typecheck",
+    "db:migrate": "pnpm --filter @logisly/api exec prisma migrate deploy",
+    "db:generate": "pnpm --filter @logisly/api exec prisma generate",
+    "smoke": "bash scripts/smoke.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

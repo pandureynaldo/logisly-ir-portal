@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  reporter
+  admin
+}
+
+enum ExternalSyncStatus {
+  none
+  pending
+  synced
+  error
+}
+
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  name        String
+  role        UserRole  @default(reporter)
+  authSub     String    @unique @map("auth_sub")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  lastLoginAt DateTime? @map("last_login_at")
+
+  incidents Incident[]      @relation("ReporterIncidents")
+  evidence  EvidenceFile[]
+
+  @@map("users")
+}
+
+model Incident {
+  id     String @id @default(uuid())
+  incidentId String @unique @map("incident_id")
+
+  reporterUserId String @map("reporter_user_id")
+  reporter       User   @relation("ReporterIncidents", fields: [reporterUserId], references: [id])
+
+  title       String?
+  description String
+
+  reportDatetime   DateTime  @map("report_datetime")
+  detectedDatetime DateTime? @map("detected_datetime")
+  occurredDatetime DateTime? @map("occurred_datetime")
+
+  affectedSystems   String? @map("affected_systems")
+  affectedUsers     String? @map("affected_users")
+  potentialData     String? @map("potential_data")
+  observedActivity  String? @map("observed_activity")
+  evidenceNotes     String? @map("evidence_notes")
+  actionsTaken      String? @map("actions_taken")
+  currentImpact     String? @map("current_impact")
+  otherInfo         String? @map("other_info")
+  reportingChannel  String? @map("reporting_channel")
+
+  incidentType        String?   @map("incident_type")
+  severity            String?
+  status              String    @default("Pending")
+  assignedOwnerEmail  String?   @map("assigned_owner_email")
+  adminNotes          String?   @map("admin_notes")
+  detectionSource     String?   @map("detection_source")
+  timelineSummary     String?   @map("timeline_summary")
+  containmentActions  String?   @map("containment_actions")
+  eradicationActions  String?   @map("eradication_actions")
+  recoveryActions     String?   @map("recovery_actions")
+  rootCause           String?   @map("root_cause")
+  impactAssessment    String?   @map("impact_assessment")
+  notificationsMade   String?   @map("notifications_made")
+  relatedTickets      String?   @map("related_tickets")
+  relatedRunbooks     String?   @map("related_runbooks")
+  riskAcceptanceRef   String?   @map("risk_acceptance_ref")
+  closureDate         DateTime? @map("closure_date")
+  postmortemRef       String?   @map("postmortem_ref")
+
+  externalTicketId    String?             @map("external_ticket_id")
+  externalTicketUrl   String?             @map("external_ticket_url")
+  externalSyncStatus  ExternalSyncStatus  @default(none) @map("external_sync_status")
+  externalSyncedAt    DateTime?           @map("external_synced_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  evidence EvidenceFile[]
+
+  @@index([externalTicketId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("incidents")
+}
+
+model EvidenceFile {
+  id               String   @id @default(uuid())
+  incidentId       String   @map("incident_id")
+  incident         Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  originalFilename String   @map("original_filename")
+  storageKey       String   @map("storage_key")
+  contentType      String   @map("content_type")
+  sizeBytes        Int      @map("size_bytes")
+  uploadedByUserId String   @map("uploaded_by_user_id")
+  uploadedBy       User     @relation(fields: [uploadedByUserId], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("evidence_files")
+}
+
+model IncidentIdCounter {
+  year    Int @id
+  lastSeq Int @map("last_seq")
+
+  @@map("incident_id_counters")
+}
